@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">BPPP</string>
+
+    <!--Strings related to login-->
+    <string name="prompt_user">Usuário</string>
+    <string name="prompt_password">Senha</string>
+    <string name="action_sign_in">Entrar</string>
+    <string name="action_sign_in_short">Entrar</string>
+    <string name="error_invalid_user">Usuário inválido</string>
+    <string name="error_invalid_password">Senha muito curta</string>
+    <string name="error_incorrect_password">Usuário e/ou senha incorretos</string>
+    <string name="error_field_required">Campo obrigatório</string>
+    <string name="permission_rationale">"A permissão ao acesso externo é necessária."</string>
+    <string name="descricao">Descrição</string>
+
+</resources>
