@@ -28,6 +28,14 @@ public interface MainInterface {
             @Query("ean") String ean
     );
 
+    @GET("BPPP/QueryPriceDescription.php")
+    Call<JsonObject> GetByDescription(
+            @Query("app_id") int app_id,
+            @Query("AUTH") String auth,
+            @Query("shop_id") int shop_id,
+            @Query("description") String description
+    );
+
     @GET("BPPP/Shop.php")
     Call<JsonObject> GetShop(
             @Query("app_id") int app_id,

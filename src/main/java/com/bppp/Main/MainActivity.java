@@ -1,22 +1,35 @@
 package com.bppp.Main;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.support.design.widget.TextInputEditText;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bppp.CommonClasses.ApiClient;
 import com.bppp.CommonClasses.Handler;
+import com.bppp.CommonClasses.RecyclerItemClickListener;
 import com.bppp.CommonClasses.SavedUser;
+import com.bppp.Login.LoginActivity;
 import com.bppp.R;
 import com.bppp.android.IntentIntegrator;
 import com.bppp.android.IntentResult;
@@ -30,11 +43,14 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
+
 public class MainActivity extends AppCompatActivity {
 
     private SavedUser SU = SavedUser.getSavedUser();
     private com.bppp.CommonClasses.Handler Handler = new Handler();
     private int R_ID = R.id.Button;
+    private static final String BPPP_PREFERENCES = "BPPP_PREFERENCES";
 
     private TextView textViewStore, textViewPrice, textViewRequest;
     private EditText editTextEAN, editTextID;
@@ -45,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner;
 
     private MainInterface mainInterface = ApiClient.getApiClient().create(MainInterface.class);
+
+    private Dialog DialogSearch;
+    private MainAdapter adapter;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -66,6 +85,28 @@ public class MainActivity extends AppCompatActivity {
         SetSpinner();
     }
 
+    @Override
+    public void onBackPressed() {
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+        alert.setMessage("Deseja realmente efetuar logoff?");
+        alert.setCancelable(false);
+        alert.setPositiveButton("Sim", (dialog, which) -> {
+            getSharedPreferences(BPPP_PREFERENCES, 0).edit().clear().apply();
+            SavedUser.setSavedUser(null);
+
+            Intent intent  = new Intent(getApplicationContext(), LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        });
+
+        alert.setNegativeButton("Não", (dialog, which) -> dialog.cancel());
+        alert.setTitle("BPPP");
+        alert.create();
+        alert.show();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void SetButton(){
         findViewById(R.id.Button).setOnClickListener(v->{
             try {
@@ -86,8 +127,13 @@ public class MainActivity extends AppCompatActivity {
                 }
                 Reset();
             }catch (Exception e){
-                Handler.ShowSnack("Houve um erro","SetButton: "+e.getMessage(),this, R_ID, true);
+                Handler.ShowSnack("Houve um erro","SetButton: "+e.getMessage(),
+                        this, R_ID, true);
             }
+        });
+
+        findViewById(R.id.imageView_Search).setOnClickListener(v->{
+            SetDialogSearch();
         });
     }
 
@@ -125,10 +171,12 @@ public class MainActivity extends AppCompatActivity {
                             JsonObject jsonObject = response.body();
                             jsonArray = jsonObject.get("data").getAsJsonArray();
                             jsonObject = jsonArray.get(0).getAsJsonObject();
-                            textViewPrice.setText(jsonObject.get("price").getAsString());
+                            textViewPrice.setText("R$"+jsonObject.get("price").getAsString());
                             textViewStore.setText(jsonObject.get("store").getAsString());
                             getSupportActionBar().setTitle(jsonObject.get("plu").getAsString());
                             getSupportActionBar().setSubtitle(jsonObject.get("description").getAsString());
+
+                            SetColor(jsonObject);
                         }
                     }catch (Exception e) {
                         Handler.ShowSnack("Houve um erro","MainActivity.GetByID.onResponse: " + e.getMessage(), MainActivity.this, R_ID,true);
@@ -157,10 +205,12 @@ public class MainActivity extends AppCompatActivity {
                             JsonObject jsonObject = response.body();
                             jsonArray = jsonObject.get("data").getAsJsonArray();
                             jsonObject = jsonArray.get(0).getAsJsonObject();
-                            textViewPrice.setText(jsonObject.get("price").getAsString());
+                            textViewPrice.setText("R$"+jsonObject.get("price").getAsString());
                             textViewStore.setText(jsonObject.get("store").getAsString());
                             getSupportActionBar().setTitle(jsonObject.get("plu").getAsString());
                             getSupportActionBar().setSubtitle(jsonObject.get("description").getAsString());
+
+                            SetColor(jsonObject);
                         }
                     }catch (Exception e) {
                         Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN.onResponse: " + e.getMessage(), MainActivity.this, R_ID,true);
@@ -175,6 +225,42 @@ public class MainActivity extends AppCompatActivity {
 
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN: " + e.getMessage(), MainActivity.this, R_ID,true);
+        }
+    }
+
+    private void GetByDescription(String Description, RecyclerView recyclerView){
+        try {
+            Call<JsonObject> call = mainInterface.GetByDescription(4,SU.getSession(),SelectedShop,Description);
+            call.enqueue(new Callback<JsonObject>() {
+                @Override
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    try{
+                        if (!Handler.isRequestError(response,MainActivity.this,R_ID)) {
+                            JsonObject jsonObject = response.body();
+                            jsonArray = jsonObject.get("data").getAsJsonArray();
+                            adapter = new MainAdapter(
+                                jsonArray,MainActivity.this,R_ID
+                            );
+                            recyclerView.setAdapter(adapter);
+                        }else{
+                            DialogSearch.cancel();
+                        }
+                    }catch (Exception e) {
+                        Handler.ShowSnack("Houve um erro","MainActivity.GetByDescription.onResponse: " + e.getMessage(),
+                                MainActivity.this, R_ID,true);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+                    Handler.ShowSnack("Houve um erro","MainActivity.GetByDescription.onFailure: " + t.toString(),
+                            MainActivity.this, R_ID,true);
+                }
+            });
+
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","MainActivity.GetByDescription: " + e.getMessage(),
+                    MainActivity.this, R_ID,true);
         }
     }
 
@@ -266,4 +352,94 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void SetDialogSearch(){
+        try {
+            if(SelectedShop == 0){
+                Handler.ShowSnack("Selecione uma loja",null,
+                        MainActivity.this, R_ID,false);
+                return;
+            }
+            DialogSearch = new Dialog(this,R.style.Theme_AppCompat_Dialog_MinWidth);
+            DialogSearch.setContentView(R.layout.dialog_search);
+
+            RecyclerView recyclerView = DialogSearch.findViewById(R.id.dialogSearch_RecyclerView);
+            Button buttonOK = DialogSearch.findViewById(R.id.dialogSearch_ButtonOk);
+
+            SearchView searchView = DialogSearch.findViewById(R.id.dialogSearch_SearchView);
+
+            RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+            recyclerView.setLayoutManager(layoutManager);
+            recyclerView.setHasFixedSize(true);
+
+            SetRecyclerView(recyclerView);
+
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String s) {
+                    try {
+                        GetByDescription(s.toUpperCase(), recyclerView);
+                    }catch (Exception e){
+                        Handler.ShowSnack("Houve um erro","MainActivity.SetDialogSearch.onQueryTextChange: " + e.getMessage(),
+                                MainActivity.this, R_ID,true);
+                    }
+                    return false;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String s) {
+                    return false;
+                }
+            });
+
+            buttonOK.setOnClickListener(v ->{
+                DialogSearch.cancel();
+            });
+
+            DialogSearch.create();
+            DialogSearch.show();
+
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","MainActivity.SetDialogSearch: " + e.getMessage(),
+                    this, R_ID,true);
+        }
+    }
+
+    private void SetRecyclerView(RecyclerView recyclerView){
+        recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(
+                this, recyclerView, new RecyclerItemClickListener.OnItemClickListener() {
+
+            public void onItemClick(View view, int position) {
+                try{
+                    JsonObject jsonObject = adapter.getItem(position);
+                    textViewPrice.setText("R$"+jsonObject.get("price").getAsString());
+                    textViewStore.setText(jsonObject.get("store").getAsString());
+                    getSupportActionBar().setTitle(jsonObject.get("plu").getAsString());
+                    getSupportActionBar().setSubtitle(jsonObject.get("description").getAsString());
+
+                    SetColor(jsonObject);
+
+                }catch (Exception e){
+                    Handler.ShowSnack("Houve um erro","MainActivity.SetRecyclerView.onLongItemClick: " + e.getMessage(), MainActivity.this, R_ID,true);
+                }
+
+            }
+
+            public boolean onLongItemClick(View view, final int position) {return false;}
+        }));
+    }
+
+    private void SetColor(JsonObject jsonObject){
+        if(jsonObject.get("promotion").getAsInt() == 1){
+            textViewPrice.setTextColor(Color.RED);
+        }else{
+            textViewPrice.setTextColor(Color.WHITE);
+        }
+
+        if(jsonObject.get("store").getAsInt() < 1){
+            textViewStore.setTextColor(Color.RED);
+        }else{
+            textViewStore.setTextColor(Color.WHITE);
+        }
+    }
 }

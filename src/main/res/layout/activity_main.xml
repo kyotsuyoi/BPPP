@@ -17,6 +17,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/imageView_Search"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/ic_search" />
+
         <TextView
             android:id="@+id/textView2"
             android:layout_width="match_parent"
@@ -111,7 +117,7 @@
             android:layout_height="51dp"
             android:ems="10"
             android:hint="Digite o EAN"
-            android:inputType="textPersonName"
+            android:inputType="number"
             android:textColor="@color/textColor"
             android:textColorHint="@color/textColor"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -127,7 +133,7 @@
             android:layout_height="51dp"
             android:ems="10"
             android:hint="Digite o PLU"
-            android:inputType="textPersonName"
+            android:inputType="number"
             android:textColor="@color/textColor"
             android:textColorHint="@color/textColor"
             app:layout_constraintTop_toBottomOf="@+id/query_price_progress" />

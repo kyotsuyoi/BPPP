@@ -29,7 +29,7 @@ public class Handler {
                     return isMessageError(response.body(), activity, R_ID);
                 case 400:
                     jsonError = new JsonParser().parse(response.errorBody().string()).getAsJsonObject();
-                    return  isMessageError(jsonError, activity, R_ID);
+                    return isMessageError(jsonError, activity, R_ID);
                 case 401:
                     jsonError = new JsonParser().parse(response.errorBody().string()).getAsJsonObject();
                     return isMessageError(jsonError, activity, R_ID);
