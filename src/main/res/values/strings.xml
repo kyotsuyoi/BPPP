@@ -4,6 +4,7 @@
     <!--Strings related to login-->
     <string name="prompt_user">Usuário</string>
     <string name="prompt_password">Senha</string>
+    <string name="prompt_confirm_password">Confirme a senha</string>
     <string name="action_sign_in">Entrar</string>
     <string name="action_sign_in_short">Entrar</string>
     <string name="error_invalid_user">Usuário inválido</string>
@@ -12,5 +13,7 @@
     <string name="error_field_required">Campo obrigatório</string>
     <string name="permission_rationale">"A permissão ao acesso externo é necessária."</string>
     <string name="descricao">Descrição</string>
+    <string name="confirm">Confirmar</string>
+    <string name="password_switch">Troque sua senha</string>
 
 </resources>

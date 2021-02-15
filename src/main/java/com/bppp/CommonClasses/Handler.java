@@ -17,9 +17,6 @@ import retrofit2.Response;
 
 public class Handler {
 
-    public static int SelectedTaskID; //Store the task that user is choose
-    public static boolean isLogged = false;
-
     public boolean isRequestError(Response<JsonObject> response, Activity activity, int R_ID){
         try {
             JsonObject jsonError;
@@ -28,20 +25,18 @@ public class Handler {
                 case 200:
                     return isMessageError(response.body(), activity, R_ID);
                 case 400:
-                    jsonError = new JsonParser().parse(response.errorBody().string()).getAsJsonObject();
-                    return isMessageError(jsonError, activity, R_ID);
                 case 401:
                     jsonError = new JsonParser().parse(response.errorBody().string()).getAsJsonObject();
                     return isMessageError(jsonError, activity, R_ID);
                 case 404:
-                    ShowSnack("Caminho não encontrado",response.raw().toString(), activity, R_ID, true);
+                    ShowSnack("Caminho não encontrado",response.raw().toString(), activity, R_ID);
                     return true;
                 default:
-                    ShowSnack(response.message(),response.raw().toString(), activity, R_ID,true);
+                    ShowSnack(response.message(),response.raw().toString(), activity, R_ID);
                     return true;
             }
         }catch (Exception e){
-            ShowSnack("Houve um erro","Handler.isRequestError: \n"+e.getMessage(), activity, R_ID,true);
+            ShowSnack("Houve um erro","Handler.isRequestError: \n"+e.getMessage(), activity, R_ID);
             return true;
         }
     }
@@ -52,37 +47,44 @@ public class Handler {
                 String message = jsonObject.get("message").getAsString();
 
                 if (message.contains("No data")){
-                    ShowSnack("Nada encontrado", null, activity, R_ID, false);
+                    ShowSnack("Nada encontrado", null, activity, R_ID);
                 }else if(message.contains("Error on delete data")) {
                     ShowSnack("Esta tarefa não pode ser removida",
                             "Esta tarefa contém informações vinculadas como por exemplo mensagens, usuários, listas, etc\n\n" + message,
                             activity,
-                            R_ID,
-                            true
+                            R_ID
                     );
                 }else if (message.contains("This user is blocked")){
-                    ShowSnack("Usuário bloqueado", null, activity, R_ID, false);
+                    ShowSnack("Usuário bloqueado", null, activity, R_ID);
                 }else if (message.contains("This user does not have access to this application")){
-                    ShowSnack("Este usuário não tem acesso nesta aplicação", null, activity, R_ID, false);
+                    ShowSnack("Este usuário não tem acesso nesta aplicação", null, activity, R_ID);
+                }else if (message.contains("User or password error")){
+                    ShowSnack("Usuário e/ou senha incoretos", null, activity, R_ID);
                 }else if (message.contains("blocked state_id")){
-                    ShowSnack("O estado dessa tarefa mudou", "Volte e atualize sua lista, esta tarefa mudou seu estado", activity, R_ID, true);
+                    ShowSnack("O estado dessa tarefa mudou", "Volte e atualize sua lista, esta tarefa mudou seu estado", activity, R_ID);
                 }else if (message.contains("Authorization denied")){
-                    ShowSnack("Acesso negado", "Sua sessão expirou.\nTalvez tenha sido conectado em outro dispositivo", activity, R_ID, true);
+                    ShowSnack("Acesso negado", "Sua sessão expirou.\nTalvez tenha sido conectado em outro dispositivo", activity, R_ID);
+                }else if (message.contains("This password do is not match")){
+                    ShowSnack("Senha incorreta", null, activity, R_ID);
+                }else if (message.contains("Default password is not permited")){
+                    ShowSnack("A senha padrão não é permitida", null, activity, R_ID);
+                }else if (message.contains("Both is the same password")){
+                    ShowSnack("A senha atual não pode ser igual a antiga", null, activity, R_ID);
                 }else {
-                    ShowSnack("Houve um erro", jsonObject.get("message").getAsString(), activity, R_ID, true);
+                    ShowSnack("Houve um erro", jsonObject.get("message").getAsString(), activity, R_ID);
                 }
             }else{
                 return false;
             }
         }catch (Exception e){
-            ShowSnack("Houve um erro","Handler.isMessageError: \n"+e.getMessage(), activity, R_ID,true);
+            ShowSnack("Houve um erro","Handler.isMessageError: \n"+e.getMessage(), activity, R_ID);
         }
         return true;
     }
 
-    public void ShowSnack(String message, String fullMessage, Activity activity, int R_ID, boolean isError){
+    public void ShowSnack(String message, String fullMessage, Activity activity, int R_ID){
         try {
-            if (isError){
+            if (fullMessage != null){
                 View.OnClickListener mOnClickListener;
                 mOnClickListener = v -> {
 
@@ -91,9 +93,7 @@ public class Handler {
                     TextView textView = dialog.findViewById(R.id.dialogFullMessage_textView);
                     Button button = dialog.findViewById(R.id.dialogFullMessage_button);
 
-                    button.setOnClickListener(view -> {
-                        dialog.cancel();
-                    });
+                    button.setOnClickListener(view -> dialog.cancel());
 
                     textView.setText(fullMessage);
                     dialog.show();

@@ -54,7 +54,7 @@ public class MainAdapter extends RecyclerView.Adapter <MainAdapter.ViewHolder> {
                 holder.textViewDescription.setPaintFlags(Paint.LINEAR_TEXT_FLAG);
             }
         }catch (Exception e){
-            Handler.ShowSnack("Houve um erro", "MainAdapter.onBindViewHolder: " + e.getMessage(), activity, R_ID, true);
+            Handler.ShowSnack("Houve um erro", "MainAdapter.onBindViewHolder: " + e.getMessage(), activity, R_ID);
         }
     }
 

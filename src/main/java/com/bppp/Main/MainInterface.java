@@ -12,7 +12,7 @@ import retrofit2.http.Query;
 
 public interface MainInterface {
 
-    @GET("BPPP/QueryPriceID.php")
+    @GET("BPPP/Product.php")
     Call<JsonObject> GetByID(
             @Query("app_id") int app_id,
             @Query("AUTH") String auth,
@@ -20,7 +20,7 @@ public interface MainInterface {
             @Query("id") String plu
     );
 
-    @GET("BPPP/QueryPriceEAN.php")
+    @GET("BPPP/Product.php")
     Call<JsonObject> GetByEAN(
             @Query("app_id") int app_id,
             @Query("AUTH") String auth,
@@ -28,7 +28,7 @@ public interface MainInterface {
             @Query("ean") String ean
     );
 
-    @GET("BPPP/QueryPriceDescription.php")
+    @GET("BPPP/Product.php")
     Call<JsonObject> GetByDescription(
             @Query("app_id") int app_id,
             @Query("AUTH") String auth,
@@ -36,10 +36,18 @@ public interface MainInterface {
             @Query("description") String description
     );
 
-    @GET("BPPP/Shop.php")
+    /*@GET("BPPP/Shop.php")
     Call<JsonObject> GetShop(
             @Query("app_id") int app_id,
             @Query("AUTH") String auth,
             @Query("company_id") int company_id
+    );*/
+
+    @GET("CCPP/ApplicationAccessFunction.php")
+    Call<JsonObject> GetApplicationAccessFunction(
+            @Query("app_id") int app_id,
+            @Query("AUTH") String auth,
+            @Query("user_id") int user_id,
+            @Query("application_id") int application_id
     );
 }

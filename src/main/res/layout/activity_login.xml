@@ -44,7 +44,7 @@
                 android:textColorHint="@color/colorGrey">
 
                 <AutoCompleteTextView
-                    android:id="@+id/login"
+                    android:id="@+id/activityLogin_AutoCompleteTextView_User"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_user"
@@ -60,7 +60,7 @@
                 android:textColorHint="@color/colorGrey">
 
                 <EditText
-                    android:id="@+id/password"
+                    android:id="@+id/activityLogin_EditText_Password"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_password"
@@ -95,6 +95,20 @@
                 android:layout_marginLeft="30dp"
                 android:layout_marginRight="30dp"/>
 
+            <Button
+                android:id="@+id/activityLogin_Button_Password"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/buttonColor"
+                android:onClick="OnLoginClick"
+                android:text="@string/password_switch"
+                android:textStyle="bold"
+                android:textColor="@color/textColor"
+                android:layout_marginTop="30dp"
+                android:layout_marginLeft="30dp"
+                android:layout_marginRight="30dp"/>
+
         </LinearLayout>
     </LinearLayout>
 
@@ -103,12 +117,21 @@
         android:id="@+id/imageView"
         android:layout_width="wrap_content"
         android:layout_height="65dp"
-        android:layout_marginBottom="16dp"
         android:contentDescription="TODO"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/activityLogin_TextViewInfo"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@mipmap/logo"
         tools:ignore="MissingConstraints" />
+
+    <TextView
+        android:id="@+id/activityLogin_TextViewInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="App version"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

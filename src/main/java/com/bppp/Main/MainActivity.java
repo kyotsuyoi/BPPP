@@ -6,21 +6,18 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -34,7 +31,10 @@ import com.bppp.R;
 import com.bppp.android.IntentIntegrator;
 import com.bppp.android.IntentResult;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -47,20 +47,22 @@ import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
 
 public class MainActivity extends AppCompatActivity {
 
-    private SavedUser SU = SavedUser.getSavedUser();
-    private com.bppp.CommonClasses.Handler Handler = new Handler();
-    private int R_ID = R.id.Button;
+    private final SavedUser SU = SavedUser.getSavedUser();
+    private final com.bppp.CommonClasses.Handler Handler = new Handler();
+    private final int R_ID = R.id.Button;
     private static final String BPPP_PREFERENCES = "BPPP_PREFERENCES";
+    //private static final int CompanyID = 1; //Only Peg Pese
 
     private TextView textViewStore, textViewPrice, textViewRequest;
     private EditText editTextEAN, editTextID;
 
     private JsonArray jsonArray;
-    private JsonArray shopList;
+    //private JsonArray shopList;
+    private JsonArray permissionsList;
     private int SelectedShop;
     private Spinner spinner;
 
-    private MainInterface mainInterface = ApiClient.getApiClient().create(MainInterface.class);
+    private final MainInterface mainInterface = ApiClient.getApiClient().create(MainInterface.class);
 
     private Dialog DialogSearch;
     private MainAdapter adapter;
@@ -83,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         SetButton();
         SetListenerForTextView();
         SetSpinner();
+
     }
 
     @Override
@@ -106,13 +109,18 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
+    public void onResume() {
+        //GetApplicationAccessFunction();
+        super.onResume();
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void SetButton(){
         findViewById(R.id.Button).setOnClickListener(v->{
             try {
                 hideKeyboard(MainActivity.this, editTextEAN.getRootView());
                 if(SelectedShop==0){
-                    Handler.ShowSnack("Selecione a loja",null,this, R_ID, false);
+                    Handler.ShowSnack("Selecione a loja",null,this, R_ID);
                     return;
                 }
                 if(!editTextEAN.getText().toString().equalsIgnoreCase("")) {
@@ -128,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                 Reset();
             }catch (Exception e){
                 Handler.ShowSnack("Houve um erro","SetButton: "+e.getMessage(),
-                        this, R_ID, true);
+                        this, R_ID);
             }
         });
 
@@ -179,18 +187,18 @@ public class MainActivity extends AppCompatActivity {
                             SetColor(jsonObject);
                         }
                     }catch (Exception e) {
-                        Handler.ShowSnack("Houve um erro","MainActivity.GetByID.onResponse: " + e.getMessage(), MainActivity.this, R_ID,true);
+                        Handler.ShowSnack("Houve um erro","MainActivity.GetByID.onResponse: " + e.getMessage(), MainActivity.this, R_ID);
                     }
                 }
 
                 @Override
                 public void onFailure(Call<JsonObject> call, Throwable t) {
-                    Handler.ShowSnack("Houve um erro","MainActivity.GetByID.onFailure: " + t.toString(), MainActivity.this, R_ID,true);
+                    Handler.ShowSnack("Houve um erro","MainActivity.GetByID.onFailure: " + t.toString(), MainActivity.this, R_ID);
                 }
             });
 
         }catch (Exception e){
-            Handler.ShowSnack("Houve um erro","MainActivity.GetByID: " + e.getMessage(), MainActivity.this, R_ID,true);
+            Handler.ShowSnack("Houve um erro","MainActivity.GetByID: " + e.getMessage(), MainActivity.this, R_ID);
         }
     }
 
@@ -213,18 +221,18 @@ public class MainActivity extends AppCompatActivity {
                             SetColor(jsonObject);
                         }
                     }catch (Exception e) {
-                        Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN.onResponse: " + e.getMessage(), MainActivity.this, R_ID,true);
+                        Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN.onResponse: " + e.getMessage(), MainActivity.this, R_ID);
                     }
                 }
 
                 @Override
                 public void onFailure(Call<JsonObject> call, Throwable t) {
-                    Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN.onFailure: " + t.toString(), MainActivity.this, R_ID,true);
+                    Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN.onFailure: " + t.toString(), MainActivity.this, R_ID);
                 }
             });
 
         }catch (Exception e){
-            Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN: " + e.getMessage(), MainActivity.this, R_ID,true);
+            Handler.ShowSnack("Houve um erro","MainActivity.GetByEAN: " + e.getMessage(), MainActivity.this, R_ID);
         }
     }
 
@@ -247,20 +255,20 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }catch (Exception e) {
                         Handler.ShowSnack("Houve um erro","MainActivity.GetByDescription.onResponse: " + e.getMessage(),
-                                MainActivity.this, R_ID,true);
+                                MainActivity.this, R_ID);
                     }
                 }
 
                 @Override
                 public void onFailure(Call<JsonObject> call, Throwable t) {
                     Handler.ShowSnack("Houve um erro","MainActivity.GetByDescription.onFailure: " + t.toString(),
-                            MainActivity.this, R_ID,true);
+                            MainActivity.this, R_ID);
                 }
             });
 
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","MainActivity.GetByDescription: " + e.getMessage(),
-                    MainActivity.this, R_ID,true);
+                    MainActivity.this, R_ID);
         }
     }
 
@@ -273,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
                 String scanBar = scanningResult.getContents();
                 GetByEAN(scanBar);
             }catch (Exception e){
-                Handler.ShowSnack("Houve um erro","MainActivity.onActivityResult: " + e.getMessage(), MainActivity.this, R_ID,true);
+                Handler.ShowSnack("Houve um erro","MainActivity.onActivityResult: " + e.getMessage(), MainActivity.this, R_ID);
             }
         }
     }
@@ -288,76 +296,87 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void GetShop(){
+    private void GetApplicationAccessFunction(){
         try {
-            Call<JsonObject> call = mainInterface.GetShop(4,SU.getSession(), 1);
+            Call<JsonObject> call = mainInterface.GetApplicationAccessFunction(4,SU.getSession(), SU.getId(),4);
             call.enqueue(new Callback<JsonObject>() {
                 @Override
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!Handler.isRequestError(response,MainActivity.this,R_ID)){
                         try{
                             JsonObject jsonObject = response.body();
-                            shopList = jsonObject.get("data").getAsJsonArray();
+                            permissionsList = jsonObject.get("data").getAsJsonArray();
+                            //GetShop();
 
                             ArrayList arrayList = new ArrayList<>();
                             arrayList.add("");
-                            for (int i = 0; i < shopList.size(); i++) {
 
-                                int id = shopList.get(i).getAsJsonObject().get("id").getAsInt();
-                                String description = shopList.get(i).getAsJsonObject().get("description").getAsString();
+                            for(int i = 0; i < permissionsList.size(); i++){
+                                JsonObject jsonPermission = permissionsList.get(i).getAsJsonObject();
 
-                                arrayList.add(id + " - " + description);
+                                if(jsonPermission.has("external_index") && jsonPermission.get("external_index") != JsonNull.INSTANCE){
+                                    int id = jsonPermission.get("external_index").getAsInt();
+                                    String description = jsonPermission.get("description").getAsString();
+
+                                    arrayList.add(id + " - " + description);
+                                }
                             }
 
                             ArrayAdapter<String> arrayAdapter= new ArrayAdapter<>(MainActivity.this,R.layout.support_simple_spinner_dropdown_item,arrayList);
 
                             spinner.setAdapter(arrayAdapter);
                         }catch (Exception e) {
-                            Handler.ShowSnack("Houve um erro","MainActivity.GetShop.onResponse: " + e.getMessage(), MainActivity.this, R_ID,true);
+                            Handler.ShowSnack("Houve um erro","MainActivity.GetApplicationAccessFunction.onResponse: " + e.getMessage(), MainActivity.this, R_ID);
                         }
                     }
                 }
 
                 @Override
-                public void onFailure(Call<JsonObject> call, Throwable t) {
-                    Handler.ShowSnack("Houve um erro","MainActivity.GetShop.onFailure: " + t.toString(), MainActivity.this, R_ID,true);
+                public void onFailure(@NotNull Call<JsonObject> call, Throwable t) {
+                    Handler.ShowSnack("Houve um erro","MainActivity.GetApplicationAccessFunction.onFailure: " + t.toString(), MainActivity.this, R_ID);
                 }
             });
 
         }catch (Exception e){
-            Handler.ShowSnack("Houve um erro","MainActivity.GetShop: " + e.getMessage(), MainActivity.this, R_ID,true);
+            Handler.ShowSnack("Houve um erro","MainActivity.GetApplicationAccessFunction: " + e.getMessage(), MainActivity.this, R_ID);
         }
     }
 
     private void SetSpinner() {
-        GetShop();
+
+        spinner.setOnTouchListener(spinnerOnTouch);
+
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @RequiresApi(api = Build.VERSION_CODES.M)
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 try {
                     Reset();
-                    ((TextView) parent.getChildAt(0)).setTextColor(getApplicationContext().getColor(R.color.textColor));
                     if(position!=0) {
-                        SelectedShop = shopList.get(position-1).getAsJsonObject().get("id").getAsInt();
+                        SelectedShop = permissionsList.get(position-1).getAsJsonObject().get("external_index").getAsInt();
+                        ((TextView) parent.getChildAt(0)).setTextColor(getApplicationContext().getColor(R.color.textColor));
                     }else{
                         SelectedShop = 0;
                     }
                 } catch (Exception e) {
-                    Handler.ShowSnack("Houve um erro", "MainActivity.SetFilterSpinner.spinnerCompany: " + e.getMessage(), MainActivity.this, R_ID, true);
+                    Handler.ShowSnack("Houve um erro", "MainActivity.SetSpinner.onItemSelected: " + e.getMessage(), MainActivity.this, R_ID);
                 }
             }
 
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
+
+    private final View.OnTouchListener spinnerOnTouch = (view, motionEvent) -> {
+        GetApplicationAccessFunction();
+        return false;
+    };
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void SetDialogSearch(){
         try {
             if(SelectedShop == 0){
                 Handler.ShowSnack("Selecione uma loja",null,
-                        MainActivity.this, R_ID,false);
+                        MainActivity.this, R_ID);
                 return;
             }
             DialogSearch = new Dialog(this,R.style.Theme_AppCompat_Dialog_MinWidth);
@@ -381,7 +400,7 @@ public class MainActivity extends AppCompatActivity {
                         GetByDescription(s.toUpperCase(), recyclerView);
                     }catch (Exception e){
                         Handler.ShowSnack("Houve um erro","MainActivity.SetDialogSearch.onQueryTextChange: " + e.getMessage(),
-                                MainActivity.this, R_ID,true);
+                                MainActivity.this, R_ID);
                     }
                     return false;
                 }
@@ -401,7 +420,7 @@ public class MainActivity extends AppCompatActivity {
 
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","MainActivity.SetDialogSearch: " + e.getMessage(),
-                    this, R_ID,true);
+                    this, R_ID);
         }
     }
 
@@ -412,7 +431,8 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(View view, int position) {
                 try{
                     JsonObject jsonObject = adapter.getItem(position);
-                    textViewPrice.setText("R$"+jsonObject.get("price").getAsString());
+                    String price = "R$"+jsonObject.get("price").getAsString();
+                    textViewPrice.setText(price);
                     textViewStore.setText(jsonObject.get("store").getAsString());
                     getSupportActionBar().setTitle(jsonObject.get("plu").getAsString());
                     getSupportActionBar().setSubtitle(jsonObject.get("description").getAsString());
@@ -420,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
                     SetColor(jsonObject);
 
                 }catch (Exception e){
-                    Handler.ShowSnack("Houve um erro","MainActivity.SetRecyclerView.onLongItemClick: " + e.getMessage(), MainActivity.this, R_ID,true);
+                    Handler.ShowSnack("Houve um erro","MainActivity.SetRecyclerView.onLongItemClick: " + e.getMessage(), MainActivity.this, R_ID);
                 }
 
             }
@@ -442,4 +462,5 @@ public class MainActivity extends AppCompatActivity {
             textViewStore.setTextColor(Color.WHITE);
         }
     }
+
 }

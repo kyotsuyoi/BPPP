@@ -12,7 +12,7 @@
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="true"
-        android:icon="@mipmap/icon11"
+        android:icon="@mipmap/icon"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:screenOrientation="portrait"

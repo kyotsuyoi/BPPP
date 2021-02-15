@@ -1,8 +1,8 @@
 package com.bppp.Login;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -29,15 +29,19 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.TextView;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.bppp.CommonClasses.ApiClient;
 import com.bppp.CommonClasses.Handler;
 import com.bppp.CommonClasses.SavedUser;
 import com.bppp.Main.MainActivity;
 import com.bppp.R;
+import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -56,9 +60,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final String BPPP_PREFERENCES = "BPPP_PREFERENCES";
 
     private SavedUser SU = new SavedUser();
-    private AutoCompleteTextView mUserView;
-    private EditText mPasswordView;
+    private AutoCompleteTextView autoCompleteTextViewUser;
     private View mLoginFormView;
+    private EditText editTextPassword;
+    private TextView textViewInfo;
     private CheckBox check;
     private boolean saved;
     private com.bppp.CommonClasses.Handler Handler = new Handler();
@@ -75,13 +80,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
-        mUserView = findViewById(R.id.login);
+        autoCompleteTextViewUser = findViewById(R.id.activityLogin_AutoCompleteTextView_User);
         populateAutoComplete();
 
         Objects.requireNonNull(getSupportActionBar()).hide();
 
-        mPasswordView = findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener((textView, id, keyEvent) -> {
+        editTextPassword = findViewById(R.id.activityLogin_EditText_Password);
+        editTextPassword.setOnEditorActionListener((textView, id, keyEvent) -> {
             if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
                 attemptLogin();
                 return true;
@@ -92,6 +97,21 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mLoginFormView = findViewById(R.id.login_form);
         //progressBar = findViewById(R.id.login_progress);
         check = findViewById(R.id.login_check);
+        textViewInfo = findViewById(R.id.activityLogin_TextViewInfo);
+
+        findViewById(R.id.activityLogin_Button_Password).setOnClickListener(v->{
+            if(!isLoginValid(autoCompleteTextViewUser.getText().toString())){
+                autoCompleteTextViewUser.setError("Usuário inválido");
+                Handler.ShowSnack("Insira nome de usuário e senha antiga para cadastrar a nova senha",null,this,R_ID);
+                return;
+            }
+            if(!isPasswordValid(editTextPassword.getText().toString())){
+                editTextPassword.setError("Senha inválida");
+                Handler.ShowSnack("Insira nome de usuário e senha antiga para cadastrar a nova senha",null,this,R_ID);
+                return;
+            }
+            DialogPassword();
+        });
 
         //Hide keyboard during check click
         check.setOnClickListener(v -> {
@@ -147,8 +167,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     "Houve um erro",
                     "LoginActivity.populateAutoComplete: "+e.getMessage(),
                     This,
-                    R_ID,
-                    true
+                    R_ID
             );
         }
     }
@@ -174,7 +193,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             return true;
         }
         if (shouldShowRequestPermissionRationale(READ_EXTERNAL_STORAGE)) {
-            Snackbar.make(mUserView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE).setAction(
+            Snackbar.make(autoCompleteTextViewUser, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE).setAction(
                     android.R.string.ok, v -> requestPermissions(new String[]{READ_EXTERNAL_STORAGE}, REQUEST_STORAGE));
         } else {
             requestPermissions(new String[]{READ_EXTERNAL_STORAGE}, REQUEST_STORAGE);
@@ -193,35 +212,35 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private void attemptLogin() {
 
         // Reset errors.
-        mUserView.setError(null);
-        mPasswordView.setError(null);
+        autoCompleteTextViewUser.setError(null);
+        editTextPassword.setError(null);
 
         // Store values at the time of the login attempt.
-        String user = mUserView.getText().toString().toLowerCase();
-        String password = mPasswordView.getText().toString();
+        String user = autoCompleteTextViewUser.getText().toString().toLowerCase();
+        String password = editTextPassword.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
 
         // Check for a valid password, if the user entered one.
         if (TextUtils.isEmpty(password)) {
-            mPasswordView.setError(getString(R.string.error_field_required));
-            focusView = mPasswordView;
+            editTextPassword.setError(getString(R.string.error_field_required));
+            focusView = editTextPassword;
             cancel = true;
         }else if(!isPasswordValid(password)){
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
+            editTextPassword.setError(getString(R.string.error_invalid_password));
+            focusView = editTextPassword;
             cancel = true;
         }
 
         // Check for a valid email address.
         if (TextUtils.isEmpty(user)) {
-            mUserView.setError(getString(R.string.error_field_required));
-            focusView = mUserView;
+            autoCompleteTextViewUser.setError(getString(R.string.error_field_required));
+            focusView = autoCompleteTextViewUser;
             cancel = true;
         } else if (!isLoginValid(user)) {
-            mUserView.setError(getString(R.string.error_invalid_user));
-            focusView = mUserView;
+            autoCompleteTextViewUser.setError(getString(R.string.error_invalid_user));
+            focusView = autoCompleteTextViewUser;
             cancel = true;
         }
 
@@ -238,7 +257,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 vSaved = 1;
             }
             ShowLoginForm(false);
-            PostLogin(user, password, SU.getSession());
+            PostLogin(user, password);
         }
     }
 
@@ -250,7 +269,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         return password.length() > 3;
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private void ShowLoginForm(final boolean show) {
 
         int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
@@ -286,7 +304,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     private void addLoginToAutoComplete(List<String> list) {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(LoginActivity.this, android.R.layout.simple_dropdown_item_1line, list);
-        mUserView.setAdapter(adapter);
+        autoCompleteTextViewUser.setAdapter(adapter);
     }
 
     private interface ProfileQuery {
@@ -330,8 +348,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         "Falha na autenticação",
                         "Não foi possível autenticar o usuário "+SU.getUser()+" que estava salvo localmente",
                         This,
-                        R_ID,
-                        true
+                        R_ID
                 );
             }
 
@@ -340,8 +357,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     "Houve um erro",
                     "LoginActivity.Login: "+e.getMessage(),
                     This,
-                    R_ID,
-                    true
+                    R_ID
             );
         }
         ShowLoginForm(true);
@@ -362,8 +378,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     "Houve um erro",
                     "LoginActivity.LoadSavedSettings: "+e.getMessage(),
                     This,
-                    R_ID,
-                    true
+                    R_ID
             );
         }
     }
@@ -371,8 +386,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private void GetSystemVersion(){
         try {
             ShowLoginForm(false);
-            systemVersionCall = loginInterface.GetAppVersion();
-            Handler.ShowSnack("Aguarde por favor...",null,This,R_ID,false);
+            systemVersionCall = loginInterface.GetAppVersion(4);
+            Handler.ShowSnack("Aguarde por favor...",null,This,R_ID);
             systemVersionCall.enqueue(new Callback<JsonObject>() {
                 @Override
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -383,8 +398,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
                             String version = packageInfo.versionName;
 
-                            JsonObject data = systemVersion.get("data").getAsJsonObject();
-                            String SysVer= data.get("system_version").getAsString();
+                            JsonArray data = systemVersion.get("data").getAsJsonArray();
+                            String SysName = data.get(0).getAsJsonObject().get("description").getAsString();
+                            String SysVer = data.get(0).getAsJsonObject().get("version").getAsString();
+                            textViewInfo.setText(String.format("%s ver.%s Created by Kyo", SysName, SysVer));
 
                             if (!version.equalsIgnoreCase(SysVer)) {
                                 final android.app.AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
@@ -395,9 +412,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             } else {
                                 if (saved) {
                                     check.setChecked(true);
-                                    PostLogin(SU.getUser(),SU.getPassword(),SU.getSession());
+                                    PostLogin(SU.getUser(),SU.getPassword());
                                 }else{
                                     ShowLoginForm(true);
+                                    Handler.ShowSnack("Entre com login e senha",null,This,R_ID);
                                 }
                             }
                         }
@@ -407,8 +425,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                                 "Houve um erro",
                                 "LoginActivity.SelectSystemVersion.onResponse: "+e.toString(),
                                 This,
-                                R_ID,
-                                true
+                                R_ID
                         );
                         ShowLoginForm(true);
                     }
@@ -420,10 +437,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             "Houve um erro",
                             "LoginActivity.SelectSystemVersion.onFailure: "+t.toString(),
                             This,
-                            R_ID,
-                            true
+                            R_ID
                     );
-                    ShowLoginForm(true);
                 }
             });
 
@@ -432,20 +447,17 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     "Houve um erro",
                     "LoginActivity.SelectSystemVersion: "+e.getMessage(),
                     This,
-                    R_ID,
-                    true
+                    R_ID
             );
-            ShowLoginForm(true);
         }
     }
 
-    private void PostLogin(String user, String password, String Session) {
+    private void PostLogin(String user, String password) {
         try {
             ShowLoginForm(false);
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("user",user);
             jsonObject.addProperty("password",password);
-            jsonObject.addProperty("session",Session);
             loginCall = loginInterface.PostLogin(4,jsonObject);
 
             loginCall.enqueue(new Callback<JsonObject>() {
@@ -467,15 +479,19 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             }
                             Login(id, user, password, session, isAdministrator);
                         } else {
+                            /*JsonObject jsonError = new JsonParser().parse(response.errorBody().toString()).getAsJsonObject();
+                            String message = jsonError.get("message").getAsString();
+                            if(message.contains("Default password is not permited")){
+                                DialogPassword();
+                            }*/
                             ShowLoginForm(true);
                         }
                     }catch (Exception e){
                         Handler.ShowSnack(
                                 "Houve um erro",
-                                "LoginActivity.SelectLogin.onResponse: "+e.toString(),
+                                "LoginActivity.PostLogin.onResponse: "+e.toString(),
                                 This,
-                                R_ID,
-                                true
+                                R_ID
                         );
                         ShowLoginForm(true);
                     }
@@ -487,8 +503,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             "Houve um erro",
                             "LoginActivity.SelectLogin.onFailure: "+t.toString(),
                             This,
-                            R_ID,
-                            true
+                            R_ID
                     );
                     ShowLoginForm(true);
                 }
@@ -498,10 +513,85 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     "Houve um erro",
                     "LoginActivity.SelectLogin: "+e.getMessage(),
                     This,
-                    R_ID,
-                    true
+                    R_ID
             );
             ShowLoginForm(true);
+        }
+    }
+
+    private void DialogPassword(){
+        final android.app.Dialog dialog = new Dialog(this, R.style.Theme_AppCompat_Dialog_MinWidth);
+        dialog.setContentView(R.layout.dialog_password);
+        EditText editTextNewPassword = dialog.findViewById(R.id.dialogPassword_EditText_Password);
+        EditText editTextNewPasswordConfirm = dialog.findViewById(R.id.dialogPassword_EditText_PasswordConfirm);
+        Button button = dialog.findViewById(R.id.dialogPassword_Button_Confirm);
+
+        button.setOnClickListener(view -> {
+            if(editTextNewPassword.length() < 8){
+                editTextNewPassword.setError("A senha precisa ter mais de 7 caracteres");
+                return;
+            }
+            if(editTextNewPasswordConfirm.length() < 8){
+                editTextNewPasswordConfirm.setError("A senha precisa ter mais de 7 caracteres");
+                return;
+            }
+
+            if(!editTextNewPassword.getText().toString().equals(editTextNewPasswordConfirm.getText().toString())){
+                editTextNewPasswordConfirm.setError("A senha não coinside");
+                return;
+            }
+
+            PutPassword(autoCompleteTextViewUser.getText().toString(),editTextPassword.getText().toString(),editTextNewPassword.getText().toString());
+            dialog.cancel();
+        });
+
+        dialog.show();
+    }
+
+    private void PutPassword(String user, String password, String newPassword) {
+        try {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("user",user);
+            jsonObject.addProperty("password",password);
+            jsonObject.addProperty("new_password",newPassword);
+            loginCall = loginInterface.PutLogin(4,jsonObject);
+
+            loginCall.enqueue(new Callback<JsonObject>() {
+                @RequiresApi(api = Build.VERSION_CODES.O)
+                @Override
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    try {
+                        if (!Handler.isRequestError(response, This, R_ID)) {
+                            editTextPassword.setText("");
+                            Handler.ShowSnack("Senha alterada, faça login normalmente",null,LoginActivity.this,R_ID);
+                        }
+                    }catch (Exception e){
+                        Handler.ShowSnack(
+                                "Houve um erro",
+                                "LoginActivity.PutPassword.onResponse: "+e.toString(),
+                                This,
+                                R_ID
+                        );
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+                    Handler.ShowSnack(
+                            "Houve um erro",
+                            "LoginActivity.PutPassword.onFailure: "+t.toString(),
+                            This,
+                            R_ID
+                    );
+                }
+            });
+        }catch (Exception e){
+            Handler.ShowSnack(
+                    "Houve um erro",
+                    "LoginActivity.PutPassword: "+e.getMessage(),
+                    This,
+                    R_ID
+            );
         }
     }
 
